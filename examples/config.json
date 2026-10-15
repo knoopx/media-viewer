@@ -1,0 +1,26 @@
+{
+  "theme": "dark",
+  "thumbnailSize": 240,
+  "gap": 8,
+  "windowWidth": 1440,
+  "windowHeight": 900,
+  "recursive": true,
+  "commands": [
+    {
+      "id": "rotate",
+      "keys": ["r"],
+      "cmd": "mogrify",
+      "args": ["-rotate", "90", "{path}"]
+    },
+    {
+      "id": "delete",
+      "keys": ["delete", "backspace"],
+      "cmd": "trash",
+      "args": ["{path}"]
+    }
+  ],
+  "shortcuts": [
+    { "id": "exit", "keys": ["q", ["ctrl", "q"]] },
+    { "id": "back", "view": "fullscreen", "keys": ["backspace"] }
+  ]
+}

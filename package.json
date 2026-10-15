@@ -1,0 +1,23 @@
+{
+  "name": "media-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A native desktop image viewer built on Zed GPUI",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot main.tsx",
+    "start": "bun main.tsx",
+    "typecheck": "bun x tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.3",
+    "@types/react": "19",
+    "typescript": "5"
+  },
+  "dependencies": {
+    "@gpuix/native": "0.10.0",
+    "@gpuix/native-linux-x64-gnu": "0.10.0",
+    "@gpuix/react": "0.10.0",
+    "react": "19.1.0"
+  }
+}
