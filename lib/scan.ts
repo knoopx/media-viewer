@@ -1,16 +1,3 @@
-/**
- * Image scanner and dimension probe for the gpuix image viewer.
- *
- * The JPEG probe is EXIF-aware: it reports orientation-adjusted DISPLAY
- * dimensions, matching what the GPUI native <img> decoder produces (the
- * Rust `exif` crate applies EXIF Orientation). For EXIF orientations
- * 5-8 (transpose, rotate90, transverse, rotate270) the SOF width and
- * height are swapped; orientations 1-4 keep the stored dimensions. If
- * the EXIF Orientation tag is absent or unparseable, the probe falls
- * back to the stored SOF dimensions. The probe is header-only: it reads
- * only the file head (the EXIF APP1 segment sits right after the SOI).
- * The other format probes have no EXIF and report stored dimensions.
- */
 import { closeSync, openSync, readSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
 import { compare as natord } from "./natord";
@@ -95,19 +82,7 @@ function probePNG(buf: Buffer): [number, number] | null {
 }
 
 const SOF_MARKERS = new Set<number>([
-  0xc0,
-  0xc1,
-  0xc2,
-  0xc3,
-  0xc5,
-  0xc6,
-  0xc7,
-  0xc9,
-  0xca,
-  0xcb,
-  0xcd,
-  0xce,
-  0xcf,
+  0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf,
 ]);
 
 function stepMarker(buf: Buffer, i: number): number {
@@ -117,11 +92,6 @@ function stepMarker(buf: Buffer, i: number): number {
   return i + 2 + buf.readUInt16BE(i + 2);
 }
 
-/**
- * Read the EXIF Orientation tag (0x0112, IFD0) from a JPEG buffer.
- * Returns the orientation value (1-8) or null if the EXIF APP1 segment
- * is absent or unparseable. Header-only: inspects APP1 segments only.
- */
 function exifOrientation(buf: Buffer): number | null {
   let i = 2;
   while (i + 9 < buf.length) {
@@ -144,21 +114,14 @@ function exifOrientation(buf: Buffer): number | null {
   return null;
 }
 
-/**
- * Parse the TIFF structure at tiffStart (both II little-endian and MM
- * big-endian) and return the IFD0 Orientation value (tag 0x0112,
- * type SHORT), or null if unparseable.
- */
 function tiffOrientation(buf: Buffer, tiffStart: number): number | null {
   if (tiffStart + 8 > buf.length) return null;
   let le: boolean;
   if (buf[tiffStart] === 0x49 && buf[tiffStart + 1] === 0x49) le = true;
-  else if (buf[tiffStart] === 0x4d && buf[tiffStart + 1] === 0x4d)
-    le = false;
+  else if (buf[tiffStart] === 0x4d && buf[tiffStart + 1] === 0x4d) le = false;
   else return null;
   const rd16 = (o: number) => (le ? buf.readUInt16LE(o) : buf.readUInt16BE(o));
-  const rd32 = (o: number) =>
-    le ? buf.readUInt32LE(o) : buf.readUInt32BE(o);
+  const rd32 = (o: number) => (le ? buf.readUInt32LE(o) : buf.readUInt32BE(o));
   if (rd16(tiffStart + 2) !== 42) return null;
   const ifd = tiffStart + rd32(tiffStart + 4);
   if (ifd + 2 > buf.length) return null;
@@ -186,8 +149,7 @@ function probeJPEG(buf: Buffer): [number, number] | null {
       const h = buf.readUInt16BE(i + 5);
       const w = buf.readUInt16BE(i + 7);
       if (w <= 0 || h <= 0) return null;
-      // EXIF orientations 5-8 swap the display axes: the native decoder
-      // renders them swapped, so report display dimensions.
+
       return orientation !== null && orientation >= 5 && orientation <= 8
         ? [h, w]
         : [w, h];
@@ -260,8 +222,7 @@ function probeTIFF(buf: Buffer, path: string): [number, number] | null {
     le ? b.readUInt32LE(o) : b.readUInt32BE(o);
   if (r16(buf, 2) !== 42) return null;
   const ifdOff = r32(buf, 4);
-  // The IFD may sit beyond the head buffer (e.g. written after the
-  // strip data); seek to it when needed.
+
   const ifd =
     ifdOff + 2 <= buf.length
       ? buf.subarray(ifdOff)

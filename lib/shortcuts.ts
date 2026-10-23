@@ -21,11 +21,7 @@ const MODIFIER_IDS: Record<string, keyof KeyMods> = {
   cmd: "cmd",
 };
 
-function bindingMatches(
-  binding: Kbd,
-  key: string,
-  mods: KeyMods,
-): boolean {
+function bindingMatches(binding: Kbd, key: string, mods: KeyMods): boolean {
   const codes = Array.isArray(binding) ? binding : [binding];
   const code = codes[codes.length - 1];
   if (code !== key) return false;
@@ -36,10 +32,6 @@ function bindingMatches(
   return true;
 }
 
-/**
- * Match a key press against a shortcut set. Multiple bindings of one
- * shortcut are allowed; modifier-chord bindings score higher than bare keys.
- */
 export function matchShortcut(
   set: Shortcut[],
   key: string,
@@ -64,27 +56,16 @@ export function hints(set: Shortcut[]): Shortcut[] {
   return set.filter((s) => s.hint !== false);
 }
 
-/** User-defined config commands, as shortcuts. */
 export function commandShortcuts(commands: Command[]): Shortcut[] {
   return commands.map((c) => ({ id: c.id, kbds: c.keys, desc: c.id }));
 }
 
-/**
- * Apply user rebinds to a built-in shortcut set for one view. A rebind
- * matches when its id matches and its `view` is omitted or equals the
- * given view; a matching rebind replaces the shortcut's default `kbds`,
- * and an empty `keys` list disables it (drops it from the set). Rebinds
- * with unknown ids are ignored. Returns a new array; the input set is
- * not mutated.
- */
 export function withOverrides(
   set: Shortcut[],
   rebinds: ShortcutBinding[],
   view: "grid" | "fullscreen",
 ): Shortcut[] {
-  const scoped = rebinds.filter(
-    (r) => r.view === undefined || r.view === view,
-  );
+  const scoped = rebinds.filter((r) => r.view === undefined || r.view === view);
   if (scoped.length === 0) return set;
   const byId = new Map<string, ShortcutBinding>();
   for (const r of scoped) byId.set(r.id, r);
@@ -92,7 +73,7 @@ export function withOverrides(
   for (const s of set) {
     const r = byId.get(s.id);
     if (r) {
-      if (r.keys.length === 0) continue; // disabled
+      if (r.keys.length === 0) continue;
       out.push({ ...s, kbds: r.keys });
     } else {
       out.push(s);
@@ -101,7 +82,6 @@ export function withOverrides(
   return out;
 }
 
-/** Commands for the grid view (App.tsx, grid mode). */
 export const GRID: Shortcut[] = [
   { id: "exit", kbds: ["q", "escape"], desc: "quit" },
   { id: "open", kbds: ["enter"], desc: "open" },
@@ -116,7 +96,6 @@ export const GRID: Shortcut[] = [
   { id: "end", kbds: ["end"], desc: "nav", hint: false },
 ];
 
-/** Commands for the fullscreen view (App.tsx, fullscreen mode). */
 export const FULLSCREEN: Shortcut[] = [
   { id: "exit", kbds: ["q"], desc: "quit" },
   { id: "back", kbds: ["escape", "enter"], desc: "back" },

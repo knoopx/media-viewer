@@ -7,7 +7,6 @@ export interface Palette {
 
   outline: string;
 
-  /** Tick glyph color (drawn on the primary check badge). */
   check: string;
 
   primary: string;

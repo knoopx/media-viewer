@@ -1,7 +1,6 @@
 import type { MediaFile } from "../lib/types.ts";
 import type { Palette } from "../theme.ts";
 
-/** Circular check badge: primary background with a white tick, legible on any image. */
 export function CheckBadge({ p, size = 28 }: { p: Palette; size?: number }) {
   return (
     <div
@@ -15,9 +14,7 @@ export function CheckBadge({ p, size = 28 }: { p: Palette; size?: number }) {
         justifyContent: "center",
       }}
     >
-      <text style={{ fontSize: 18, color: p.check }}>
-        ✓
-      </text>
+      <text style={{ fontSize: 18, color: p.check }}>✓</text>
     </div>
   );
 }

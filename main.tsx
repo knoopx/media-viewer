@@ -1,11 +1,13 @@
 import { render } from "@gpuix/react";
 import { statSync } from "node:fs";
+import { dirname, extname } from "node:path";
 import { App } from "./App.tsx";
 import { loadConfig, type Config } from "./config.ts";
 import { dispatchKey } from "./lib/keybus.ts";
-import { scan } from "./lib/scan.ts";
+import { scan, SUPPORTED_IMAGE_EXTENSIONS } from "./lib/scan.ts";
+import type { MediaFile } from "./lib/types.ts";
 
-const USAGE = `usage: media-viewer [options] <directory>
+const USAGE = `usage: media-viewer [options] <directory|image>
 
 options:
   --theme <dark|light>   theme (default: dark)
@@ -15,6 +17,10 @@ options:
   --window-height <px>   window height (default: 900)
   --no-recursive         do not scan subdirectories
   -h, --help             show this help
+
+A directory opens the thumbnail grid; an image file opens directly
+in fullscreen with the grid built from its parent directory
+(escape returns to the grid).
 
 Flags override config.json values; omitted flags fall back to the
 config file, then built-in defaults.`;
@@ -27,7 +33,10 @@ function failUsage(message?: string): never {
   process.exit(2);
 }
 
-function parseFlags(argv: string[]): { dir: string; overrides: Partial<Config> } {
+function parseFlags(argv: string[]): {
+  dir: string;
+  overrides: Partial<Config>;
+} {
   const overrides: Partial<Config> = {};
   const positional: string[] = [];
 
@@ -104,22 +113,30 @@ function parseFlags(argv: string[]): { dir: string; overrides: Partial<Config> }
 
 async function main() {
   const { dir, overrides } = parseFlags(process.argv.slice(2));
-  let isDir = false;
-  try {
-    isDir = statSync(dir).isDirectory();
-  } catch {
-    isDir = false;
-  }
-  if (!isDir) {
-    console.error(`not a directory: ${dir}`);
-    process.exit(2);
-  }
-
   const config = { ...loadConfig(), ...overrides };
 
-  const files = await scan(dir, config.recursive);
+  let files: MediaFile[];
+  let openPath: string | undefined;
+  let st;
+  try {
+    st = statSync(dir);
+  } catch {
+    failUsage(`no such file: ${dir}`);
+  }
+  if (st.isFile()) {
+    const ext = extname(dir).toLowerCase().replace(/^\./, "");
+    if (!SUPPORTED_IMAGE_EXTENSIONS.includes(ext)) {
+      failUsage(`unsupported image file: ${dir}`);
+    }
+    files = await scan(dirname(dir), config.recursive);
+    openPath = dir;
+  } else if (st.isDirectory()) {
+    files = await scan(dir, config.recursive);
+  } else {
+    failUsage(`not a file or directory: ${dir}`);
+  }
 
-  render(<App files={files} config={config} />, {
+  render(<App files={files} config={config} openPath={openPath} />, {
     title: "media-viewer",
     width: config.windowWidth,
     height: config.windowHeight,

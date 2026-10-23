@@ -275,7 +275,6 @@ export const Grid = forwardRef(function Grid(
         })}
       </virtual-list>
 
-      {}
       <div
         style={{
           position: "absolute",
@@ -286,7 +285,6 @@ export const Grid = forwardRef(function Grid(
           pointerEvents: "none",
         }}
       >
-        {}
         {highlight && selected !== null && (
           <img
             src={files[selected].path}
@@ -309,7 +307,6 @@ export const Grid = forwardRef(function Grid(
             }}
           />
         )}
-        {/* Check badge above the focus glow so the tick stays visible on the focused tile. */}
         {highlight && selected !== null && selectedSet.has(selected) && (
           <div
             style={{

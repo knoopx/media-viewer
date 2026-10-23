@@ -14,19 +14,8 @@ export interface Config {
 
   recursive: boolean;
 
-  /**
-   * User-defined file commands: keybinding + external command run on the
-   * selected file. There are no built-in commands; a command that is not
-   * configured is unavailable.
-   */
   commands: Command[];
 
-  /**
-   * User rebinds for built-in shortcuts: each entry replaces the default
-   * bindings of the named shortcut id, optionally scoped to one view via
-   * `view` ("grid" | "fullscreen"); an empty `keys` list disables the
-   * shortcut.
-   */
   shortcuts: ShortcutBinding[];
 }
 

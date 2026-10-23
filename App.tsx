@@ -1,4 +1,5 @@
 import { statSync } from "node:fs";
+import { resolve } from "node:path";
 import { useEffect, useRef, useState } from "react";
 import { useWindowSize } from "@gpuix/react";
 import type { Config } from "./config.ts";
@@ -33,10 +34,17 @@ type Mode = "grid" | { fullscreen: number };
 interface AppProps {
   files: MediaFile[];
   config: Config;
+
+  openPath?: string;
 }
 
-export function App({ files, config }: AppProps) {
-  const [mode, setMode] = useState<Mode>("grid");
+export function App({ files, config, openPath }: AppProps) {
+  const [mode, setMode] = useState<Mode>(() => {
+    const i = openPath
+      ? files.findIndex((f) => resolve(f.path) === resolve(openPath))
+      : -1;
+    return i >= 0 ? { fullscreen: i } : "grid";
+  });
 
   const [media, setMedia] = useState<MediaFile[]>(files);
 
@@ -72,7 +80,6 @@ export function App({ files, config }: AppProps) {
     });
   };
 
-  /** Run a user-defined config command on the file at index i. */
   const applyCommand = (cmd: Command, i: number): void => {
     const f = media[i];
     if (!runCommand(cmd, f.path)) return;
@@ -104,7 +111,6 @@ export function App({ files, config }: AppProps) {
     );
   };
 
-  /** Print the checked file paths (one per line) to stdout, then exit. */
   const exitApp = (): void => {
     const paths = [...selectedSet]
       .sort((a, b) => a - b)
@@ -113,8 +119,7 @@ export function App({ files, config }: AppProps) {
       process.exit(0);
       return;
     }
-    // Write-then-exit in the flush callback: process.exit can truncate
-    // buffered pipe stdout.
+
     process.stdout.write(paths.join("\n") + "\n", () => process.exit(0));
   };
 
@@ -202,10 +207,7 @@ export function App({ files, config }: AppProps) {
 
   useEffect(() => {
     const cmds = commandShortcuts(config.commands);
-    const gridSet = [
-      ...withOverrides(GRID, config.shortcuts, "grid"),
-      ...cmds,
-    ];
+    const gridSet = [...withOverrides(GRID, config.shortcuts, "grid"), ...cmds];
     const fullSet = [
       ...withOverrides(FULLSCREEN, config.shortcuts, "fullscreen"),
       ...cmds,

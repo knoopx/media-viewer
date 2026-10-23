@@ -8,9 +8,9 @@ GPU-rendered and keyboard-driven.
 
 ## Supported formats
 
-| Formats                                                       |
-| ------------------------------------------------------------- |
-| `png` `jpg` `jpeg` `webp` `gif` `bmp` `tiff` `tif` `ico`     |
+| Formats                                                  |
+| -------------------------------------------------------- |
+| `png` `jpg` `jpeg` `webp` `gif` `bmp` `tiff` `tif` `ico` |
 
 ## Usage
 
@@ -18,6 +18,14 @@ Run directly with Bun:
 
 ```sh
 bun main.tsx /path/to/photos
+```
+
+A directory opens the thumbnail grid; a single image file opens
+directly in fullscreen, with the grid built from its parent directory
+(`escape` returns to the grid, `left`/`right` move through it):
+
+```sh
+bun main.tsx /path/to/photo.png
 ```
 
 Development mode (hot reload):
@@ -43,31 +51,31 @@ written to stdout, one per line — an empty list writes nothing:
 Flags override `config.json` values; omitted flags fall back to the
 config file, then built-in defaults.
 
-| Flag                | Config key      | Description                  |
-| ------------------- | --------------- | ---------------------------- |
-| `--theme <t>`       | `theme`         | `dark` or `light`            |
-| `--thumbnail-size`  | `thumbnailSize` | Target tile height in px     |
-| `--gap`             | `gap`           | Reserved spacing in px       |
-| `--window-width`    | `windowWidth`   | Window width in px           |
-| `--window-height`   | `windowHeight`  | Window height in px          |
-| `--no-recursive`    | `recursive`     | Disable subdirectory scan    |
-| `-h`, `--help`      | —               | Print usage and exit         |
+| Flag               | Config key      | Description               |
+| ------------------ | --------------- | ------------------------- |
+| `--theme <t>`      | `theme`         | `dark` or `light`         |
+| `--thumbnail-size` | `thumbnailSize` | Target tile height in px  |
+| `--gap`            | `gap`           | Reserved spacing in px    |
+| `--window-width`   | `windowWidth`   | Window width in px        |
+| `--window-height`  | `windowHeight`  | Window height in px       |
+| `--no-recursive`   | `recursive`     | Disable subdirectory scan |
+| `-h`, `--help`     | —               | Print usage and exit      |
 
 ## Configuration
 
 A `config.json` is read from the current directory, then from
 `~/.config/media-viewer/config.json`; missing keys fall back to defaults.
 
-| Key            | Default  | Description                          |
-| -------------- | -------- | ------------------------------------ |
-| `theme`        | `dark`   | `dark` or `light`                    |
-| `thumbnailSize`| `240`    | Target tile height in px             |
-| `gap`          | `8`      | Reserved spacing                     |
-| `windowWidth`  | `1440`   | Window width in px                   |
-| `windowHeight` | `900`    | Window height in px                  |
-| `recursive`    | `true`   | Scan subdirectories                  |
-| `commands`     | `[]`     | User-defined file commands (below)   |
-| `shortcuts`    | `[]`     | Rebinds for built-in shortcuts (below) |
+| Key             | Default | Description                            |
+| --------------- | ------- | -------------------------------------- |
+| `theme`         | `dark`  | `dark` or `light`                      |
+| `thumbnailSize` | `240`   | Target tile height in px               |
+| `gap`           | `8`     | Reserved spacing                       |
+| `windowWidth`   | `1440`  | Window width in px                     |
+| `windowHeight`  | `900`   | Window height in px                    |
+| `recursive`     | `true`  | Scan subdirectories                    |
+| `commands`      | `[]`    | User-defined file commands (below)     |
+| `shortcuts`     | `[]`    | Rebinds for built-in shortcuts (below) |
 
 ### File commands
 
@@ -75,12 +83,12 @@ A `config.json` is read from the current directory, then from
 There are no built-in file commands: a command that is not configured is
 unavailable. Each entry:
 
-| Field  | Description                                                        |
-| ------ | ------------------------------------------------------------------ |
-| `id`   | Command id; matched against keypresses and the shortcut set        |
+| Field  | Description                                                         |
+| ------ | ------------------------------------------------------------------- |
+| `id`   | Command id; matched against keypresses and the shortcut set         |
 | `keys` | Key bindings (single key, or a chord like `["ctrl", "shift", "x"]`) |
-| `cmd`  | Executable to run                                                  |
-| `args` | Arguments; `{path}` is substituted with the selected file path     |
+| `cmd`  | Executable to run                                                   |
+| `args` | Arguments; `{path}` is substituted with the selected file path      |
 
 On success the file is re-probed for dimensions; if the file no longer
 exists (e.g. a `trash` delete) it is dropped from the grid. See
@@ -105,23 +113,23 @@ ignored.
 
 Built-in ids and defaults:
 
-| View        | id         | Default keys                |
-| ----------- | ---------- | --------------------------- |
-| grid        | `exit`     | `q`, `escape`               |
-| grid        | `open`     | `enter`                     |
-| grid        | `check`    | `space`                     |
-| grid        | `left`     | `left`                      |
-| grid        | `right`    | `right`                     |
-| grid        | `up`       | `up`                        |
-| grid        | `down`     | `down`                      |
-| grid        | `page-up`  | `pageup`                    |
-| grid        | `page-down`| `pagedown`                  |
-| grid        | `home`     | `home`                      |
-| grid        | `end`      | `end`                       |
-| fullscreen  | `exit`     | `q`                         |
-| fullscreen  | `back`     | `escape`, `enter`           |
-| fullscreen  | `prev`     | `left`                      |
-| fullscreen  | `next`     | `right`                     |
+| View       | id          | Default keys      |
+| ---------- | ----------- | ----------------- |
+| grid       | `exit`      | `q`, `escape`     |
+| grid       | `open`      | `enter`           |
+| grid       | `check`     | `space`           |
+| grid       | `left`      | `left`            |
+| grid       | `right`     | `right`           |
+| grid       | `up`        | `up`              |
+| grid       | `down`      | `down`            |
+| grid       | `page-up`   | `pageup`          |
+| grid       | `page-down` | `pagedown`        |
+| grid       | `home`      | `home`            |
+| grid       | `end`       | `end`             |
+| fullscreen | `exit`      | `q`               |
+| fullscreen | `back`      | `escape`, `enter` |
+| fullscreen | `prev`      | `left`            |
+| fullscreen | `next`      | `right`           |
 
 Example — add `ctrl+q` as an extra quit binding in both views, bind
 `backspace` to back only in fullscreen, and disable `check` in the grid:
