@@ -181,8 +181,6 @@ export function App({ files, config, openPath }: AppProps) {
         else gridRef.current?.scrollTo(Infinity);
         break;
     }
-    const cmd = findCommand(config.commands, id);
-    if (cmd && selected !== null) applyCommand(cmd, selected);
   };
 
   const dispatchFullscreenCommand = (i: number, id: string): void => {
@@ -201,25 +199,34 @@ export function App({ files, config, openPath }: AppProps) {
         if (i < media.length - 1) setMode({ fullscreen: i + 1 });
         break;
     }
-    const cmd = findCommand(config.commands, id);
-    if (cmd) applyCommand(cmd, i);
   };
 
   useEffect(() => {
     const cmds = commandShortcuts(config.commands);
-    const gridSet = [...withOverrides(GRID, config.shortcuts, "grid"), ...cmds];
-    const fullSet = [
-      ...withOverrides(FULLSCREEN, config.shortcuts, "fullscreen"),
-      ...cmds,
-    ];
+    const gridSet = withOverrides(GRID, config.shortcuts, "grid");
+    const fullSet = withOverrides(FULLSCREEN, config.shortcuts, "fullscreen");
+    const runUserCommand = (key: string, mods: KeyMods, i: number | null) => {
+      const s = matchShortcut(cmds, key, mods);
+      if (!s || i === null) return;
+      const cmd = findCommand(config.commands, s.id);
+      if (cmd) applyCommand(cmd, i);
+    };
     const handle = (key: string, mods: KeyMods) => {
       if (typeof mode === "object") {
         const s = matchShortcut(fullSet, key, mods);
-        if (s) dispatchFullscreenCommand(mode.fullscreen, s.id);
+        if (s) {
+          dispatchFullscreenCommand(mode.fullscreen, s.id);
+          return;
+        }
+        runUserCommand(key, mods, mode.fullscreen);
         return;
       }
       const s = matchShortcut(gridSet, key, mods);
-      if (s) dispatchGridCommand(s.id);
+      if (s) {
+        dispatchGridCommand(s.id);
+        return;
+      }
+      runUserCommand(key, mods, selected);
     };
     setKeyHandler(handle);
     return () => setKeyHandler(null);
