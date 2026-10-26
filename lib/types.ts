@@ -18,6 +18,11 @@ export interface Command {
   args: string[];
 }
 
+export interface ScrollWindow {
+  top: number;
+  height: number;
+}
+
 export interface MediaFile {
   path: string;
 
@@ -40,9 +45,14 @@ export interface RowGeom {
   tiles: TileGeom[];
   height: number;
   y: number;
+
+  off: number;
 }
 
 export interface GridGeom {
   rows: RowGeom[];
   contentH: number;
+  gap: number;
+
+  edge: number;
 }

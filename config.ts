@@ -4,8 +4,6 @@ import { join } from "node:path";
 import type { Command, ShortcutBinding } from "./lib/types.ts";
 
 export interface Config {
-  theme: "dark" | "light";
-
   thumbnailSize: number;
 
   gap: number;
@@ -20,7 +18,6 @@ export interface Config {
 }
 
 export const defaultConfig: Config = {
-  theme: "dark",
   thumbnailSize: 240,
   gap: 8,
   windowWidth: 1440,

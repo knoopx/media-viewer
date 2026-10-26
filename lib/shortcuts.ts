@@ -1,10 +1,9 @@
+import { MOVE_COMMANDS, type MoveCommand } from "./geometry.ts";
 import type { Command, Kbd, ShortcutBinding } from "./types.ts";
 
 export interface Shortcut {
   id: string;
   kbds: Kbd[];
-  desc: string;
-  hint?: boolean;
 }
 
 export interface KeyMods {
@@ -52,12 +51,8 @@ export function matchShortcut(
   return best;
 }
 
-export function hints(set: Shortcut[]): Shortcut[] {
-  return set.filter((s) => s.hint !== false);
-}
-
 export function commandShortcuts(commands: Command[]): Shortcut[] {
-  return commands.map((c) => ({ id: c.id, kbds: c.keys, desc: c.id }));
+  return commands.map((c) => ({ id: c.id, kbds: c.keys }));
 }
 
 export function withOverrides(
@@ -82,23 +77,27 @@ export function withOverrides(
   return out;
 }
 
+const NAV: Record<MoveCommand, Kbd[]> = {
+  left: ["left"],
+  right: ["right"],
+  up: ["up"],
+  down: ["down"],
+  "page-up": ["pageup"],
+  "page-down": ["pagedown"],
+  home: ["home"],
+  end: ["end"],
+};
+
 export const GRID: Shortcut[] = [
-  { id: "exit", kbds: ["q", "escape"], desc: "quit" },
-  { id: "open", kbds: ["enter"], desc: "open" },
-  { id: "check", kbds: ["space"], desc: "check" },
-  { id: "left", kbds: ["left"], desc: "nav" },
-  { id: "right", kbds: ["right"], desc: "nav" },
-  { id: "up", kbds: ["up"], desc: "nav" },
-  { id: "down", kbds: ["down"], desc: "nav" },
-  { id: "page-up", kbds: ["pageup"], desc: "nav", hint: false },
-  { id: "page-down", kbds: ["pagedown"], desc: "nav", hint: false },
-  { id: "home", kbds: ["home"], desc: "nav", hint: false },
-  { id: "end", kbds: ["end"], desc: "nav", hint: false },
+  { id: "exit", kbds: ["q", "escape"] },
+  { id: "open", kbds: ["enter"] },
+  { id: "check", kbds: ["space"] },
+  ...MOVE_COMMANDS.map((id) => ({ id, kbds: NAV[id] })),
 ];
 
 export const FULLSCREEN: Shortcut[] = [
-  { id: "exit", kbds: ["q"], desc: "quit" },
-  { id: "back", kbds: ["escape", "enter"], desc: "back" },
-  { id: "prev", kbds: ["left"], desc: "nav" },
-  { id: "next", kbds: ["right"], desc: "nav" },
+  { id: "exit", kbds: ["q"] },
+  { id: "back", kbds: ["escape", "enter"] },
+  { id: "prev", kbds: ["left"] },
+  { id: "next", kbds: ["right"] },
 ];

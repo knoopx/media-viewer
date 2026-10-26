@@ -49,17 +49,62 @@
           url = "https://registry.npmjs.org/eventsource-parser/-/eventsource-parser-4.1.2.tgz";
           hash = "sha256-2ILcUCLgrDmEpvt0fZiTpzFnWgp9neAd424KrQJgyGw=";
         };
+
+      };
+
+      # The desktop entry ships inside the package output (copyDesktopItems), so
+      # any consumer that puts pkgs.media-viewer in a package path gets
+      # share/applications/media-viewer.desktop, the icons and the MIME types
+      # with it.
+      #
+      # MimeType mirrors SUPPORTED_IMAGE_EXTENSIONS in lib/scan.ts: png, jpg +
+      # jpeg -> image/jpeg, webp, gif, bmp, tif + tiff -> image/tiff, ico ->
+      # image/vnd.microsoft.icon. Nothing else is declared openable — in
+      # particular SVG is not, the app has no SVG decoder.
+      desktopItem = pkgs.makeDesktopItem {
+        name = "media-viewer";
+        desktopName = "Media Viewer";
+        genericName = "Image viewer";
+        comment = "Browse a folder of images as a GPU-accelerated thumbnail grid";
+        categories = [
+          "Graphics"
+          "Viewer"
+        ];
+        exec = "media-viewer %f";
+        icon = "media-viewer";
+        keywords = [
+          "image"
+          "viewer"
+          "photos"
+          "gallery"
+        ];
+        mimeTypes = [
+          "image/bmp"
+          "image/gif"
+          "image/jpeg"
+          "image/png"
+          "image/tiff"
+          "image/vnd.microsoft.icon"
+          "image/webp"
+        ];
+        startupNotify = true;
+        # GPUI reports this WM class; without it the launcher window is not
+        # matched to the opened app.
+        startupWMClass = "media-viewer";
       };
     in
     {
-      packages.${system}.default =
-        pkgs.stdenvNoCC.mkDerivation {
+      packages.${system} = {
+        default = pkgs.stdenvNoCC.mkDerivation {
           pname = "media-viewer";
           version = "0.1.0";
 
           inherit src;
 
-          nativeBuildInputs = [ pkgs.bun pkgs.makeBinaryWrapper ];
+          nativeBuildInputs = [
+            pkgs.bun
+            pkgs.makeBinaryWrapper
+          ];
 
           propagatedBuildInputs = [
             pkgs.libxkbcommon
@@ -69,6 +114,14 @@
           ];
 
           dontBuild = true;
+
+          meta = {
+            description = "GPU-accelerated image viewer: browse a folder of images as a thumbnail grid";
+            homepage = "https://github.com/knoopx/media-viewer";
+            mainProgram = "media-viewer";
+            # @gpuix/native-linux-x64-gnu is the only prebuilt native lib.
+            platforms = [ "x86_64-linux" ];
+          };
 
           installPhase = ''
             mkdir -p $out/bin $out/lib
@@ -96,8 +149,30 @@
             makeWrapper $out/lib/media-viewer $out/bin/media-viewer \
               --set LD_LIBRARY_PATH "${pkgs.lib.makeLibraryPath [ pkgs.libxkbcommon pkgs.wayland pkgs.mesa pkgs.vulkan-loader ]}" \
               --set NAPI_RS_NATIVE_LIBRARY_PATH "$out/lib/media-viewer-native/gpuix-native.linux-x64-gnu.node"
+
+            mkdir -p $out/share/icons/hicolor/scalable/apps
+            cp assets/icons/media-viewer.svg $out/share/icons/hicolor/scalable/apps/media-viewer.svg
+
+            for size in 24 48 128 512; do
+              mkdir -p $out/share/icons/hicolor/''${size}x''${size}/apps
+              cp assets/icons/media-viewer-''${size}.png \
+                $out/share/icons/hicolor/''${size}x''${size}/apps/media-viewer.png
+            done
+
+            # The desktop entry ships in this output too, so any consumer that
+            # puts this package in a package path gets the entry, the icons and
+            # the MIME associations together. It is copied explicitly rather than
+            # via the pkgs.copyDesktopItems hook: assigning installPhase as a raw
+            # string replaces stdenv's installPhase() function, which is what
+            # calls runHook postInstall, so postInstall hooks never fire here.
+            install -Dm444 ${desktopItem}/share/applications/media-viewer.desktop \
+              $out/share/applications/media-viewer.desktop
           '';
         };
+
+        # Also exposed standalone for consumers that want the entry on its own.
+        inherit desktopItem;
+      };
 
       apps.${system}.default = {
         type = "app";

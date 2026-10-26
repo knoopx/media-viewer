@@ -2,7 +2,7 @@ import { render } from "@gpuix/react";
 import { statSync } from "node:fs";
 import { dirname, extname } from "node:path";
 import { App } from "./App.tsx";
-import { loadConfig, type Config } from "./config.ts";
+import { defaultConfig, loadConfig, type Config } from "./config.ts";
 import { dispatchKey } from "./lib/keybus.ts";
 import { scan, SUPPORTED_IMAGE_EXTENSIONS } from "./lib/scan.ts";
 import type { MediaFile } from "./lib/types.ts";
@@ -10,11 +10,10 @@ import type { MediaFile } from "./lib/types.ts";
 const USAGE = `usage: media-viewer [options] <directory|image>
 
 options:
-  --theme <dark|light>   theme (default: dark)
-  --thumbnail-size <px>  target tile height (default: 240)
-  --gap <px>             grid spacing (default: 8)
-  --window-width <px>    window width (default: 1440)
-  --window-height <px>   window height (default: 900)
+  --thumbnail-size <px>  target tile height (default: ${defaultConfig.thumbnailSize})
+  --gap <px>             grid spacing (default: ${defaultConfig.gap})
+  --window-width <px>    window width (default: ${defaultConfig.windowWidth})
+  --window-height <px>   window height (default: ${defaultConfig.windowHeight})
   --no-recursive         do not scan subdirectories
   -h, --help             show this help
 
@@ -69,15 +68,6 @@ function parseFlags(argv: string[]): {
         console.log(USAGE);
         process.exit(0);
         break;
-      case "--theme": {
-        const value = valueOf(arg, i);
-        i++;
-        if (value !== "dark" && value !== "light") {
-          failUsage(`invalid theme: ${value}`);
-        }
-        overrides.theme = value;
-        break;
-      }
       case "--thumbnail-size":
         numberOverride(arg, i, "thumbnailSize");
         i++;

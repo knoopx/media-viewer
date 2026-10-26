@@ -1,20 +1,12 @@
 import { statSync } from "node:fs";
 import { resolve } from "node:path";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useWindowSize } from "@gpuix/react";
 import type { Config } from "./config.ts";
 import { Fullscreen } from "./components/Fullscreen.tsx";
 import { Grid, type GridHandle } from "./components/Grid.tsx";
-import {
-  contentWidth,
-  justifiedRows,
-  moveHorizontal,
-  moveRow,
-  pageMove,
-  rowsInViewport,
-  scrollTarget,
-  type Viewport,
-} from "./lib/geometry.ts";
+import { contentWidth, justifiedRows, type Viewport } from "./lib/geometry.ts";
+import { useGridNavigation } from "./lib/hooks/useGridNavigation.ts";
 import { findCommand, runCommand } from "./lib/commands.ts";
 import { setKeyHandler } from "./lib/keybus.ts";
 import {
@@ -27,7 +19,7 @@ import {
 } from "./lib/shortcuts.ts";
 import { probeDimensions } from "./lib/scan.ts";
 import type { Command, MediaFile } from "./lib/types.ts";
-import { paletteForTheme } from "./theme.ts";
+import { palette } from "./theme.ts";
 
 type Mode = "grid" | { fullscreen: number };
 
@@ -53,19 +45,33 @@ export function App({ files, config, openPath }: AppProps) {
   );
   const [selectedSet, setSelectedSet] = useState<Set<number>>(new Set());
   const gridRef = useRef<GridHandle>(null);
-  const p = paletteForTheme(config.theme);
   const { width: winW } = useWindowSize();
 
-  const geom = justifiedRows(
-    media,
-    config.thumbnailSize,
-    contentWidth(winW, 0),
+  const geom = useMemo(
+    () =>
+      justifiedRows(
+        media,
+        config.thumbnailSize,
+        contentWidth(winW, 0, config.gap),
+        config.gap,
+      ),
+    [media, config.thumbnailSize, winW, config.gap],
   );
 
   const viewport = (): Viewport => {
     const v = gridRef.current?.getViewport() ?? { top: 0, height: 0 };
     return { top: v.top, bottom: v.top + v.height, height: v.height };
   };
+
+  const navigateGrid = useGridNavigation({
+    geom,
+    count: media.length,
+    selected,
+    setSelected,
+    scrollTo: (y) => gridRef.current?.scrollTo(y),
+    scrollBy: (dy) => gridRef.current?.scrollBy(dy),
+    viewport,
+  });
 
   useEffect(() => {
     setSelected((s) => (s === null || s < 0 || s >= media.length ? null : s));
@@ -123,25 +129,8 @@ export function App({ files, config, openPath }: AppProps) {
     process.stdout.write(paths.join("\n") + "\n", () => process.exit(0));
   };
 
-  const navigateRow = (down: boolean) => {
-    if (selected !== null) {
-      setSelected(moveRow(geom, selected, down));
-    } else {
-      const t = scrollTarget(geom, viewport(), down ? "down" : "up");
-      if (t) gridRef.current?.scrollTo(t.y);
-    }
-  };
-
-  const pageKey = (down: boolean) => {
-    if (selected !== null) {
-      const pages = rowsInViewport(geom, viewport());
-      setSelected(pageMove(geom, selected, pages, down));
-    } else {
-      gridRef.current?.scrollBy(viewport().height * (down ? 1 : -1));
-    }
-  };
-
   const dispatchGridCommand = (id: string): void => {
+    if (navigateGrid(id)) return;
     switch (id) {
       case "exit":
         exitApp();
@@ -151,34 +140,6 @@ export function App({ files, config, openPath }: AppProps) {
         break;
       case "check":
         if (selected !== null) toggleCheck(selected);
-        break;
-      case "left":
-        if (selected !== null)
-          setSelected(moveHorizontal(geom, selected, false));
-        break;
-      case "right":
-        if (selected !== null)
-          setSelected(moveHorizontal(geom, selected, true));
-        break;
-      case "up":
-        navigateRow(false);
-        break;
-      case "down":
-        navigateRow(true);
-        break;
-      case "page-up":
-        pageKey(false);
-        break;
-      case "page-down":
-        pageKey(true);
-        break;
-      case "home":
-        if (selected !== null) setSelected(0);
-        else gridRef.current?.scrollTo(0);
-        break;
-      case "end":
-        if (selected !== null) setSelected(media.length - 1);
-        else gridRef.current?.scrollTo(Infinity);
         break;
     }
   };
@@ -239,7 +200,7 @@ export function App({ files, config, openPath }: AppProps) {
         flexDirection: "column",
         width: "100%",
         height: "100%",
-        backgroundColor: p.bg,
+        backgroundColor: palette.bg,
         userSelect: "none",
         position: "relative",
       }}
@@ -255,10 +216,11 @@ export function App({ files, config, openPath }: AppProps) {
         <Grid
           ref={gridRef}
           files={media}
+          geom={geom}
           target={config.thumbnailSize}
           selected={selected}
           selectedSet={selectedSet}
-          p={p}
+          p={palette}
           onSelect={setSelected}
         />
       </div>
@@ -272,10 +234,10 @@ export function App({ files, config, openPath }: AppProps) {
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            backgroundColor: p.bg,
+            backgroundColor: palette.bg,
           }}
         >
-          <Fullscreen file={media[mode.fullscreen]} p={p} />
+          <Fullscreen file={media[mode.fullscreen]} p={palette} />
         </div>
       )}
     </div>

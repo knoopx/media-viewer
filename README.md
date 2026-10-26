@@ -41,7 +41,8 @@ nix run . -- /path/to/photos
 ```
 
 `dev` / `start` scripts in `package.json` wrap the same entry point;
-`bun x tsc --noEmit` typechecks.
+`bun x tsc --noEmit` typechecks and `bun check-layout.ts` checks the layout
+invariants (row algebra, edge margins, box tops matching scroll anchors).
 
 On exit (`q`), the paths of all checked files (toggled with `space`) are
 written to stdout, one per line — an empty list writes nothing:
@@ -53,13 +54,21 @@ config file, then built-in defaults.
 
 | Flag               | Config key      | Description               |
 | ------------------ | --------------- | ------------------------- |
-| `--theme <t>`      | `theme`         | `dark` or `light`         |
 | `--thumbnail-size` | `thumbnailSize` | Target tile height in px  |
-| `--gap`            | `gap`           | Reserved spacing in px    |
+| `--gap`            | `gap`           | Tile + edge spacing in px |
 | `--window-width`   | `windowWidth`   | Window width in px        |
 | `--window-height`  | `windowHeight`  | Window height in px       |
 | `--no-recursive`   | `recursive`     | Disable subdirectory scan |
 | `-h`, `--help`     | —               | Print usage and exit      |
+
+`gap` drives both the spacing between tiles and the margin between the
+outermost tiles and the window edge, which is `max(gap, 4)` px — edge gaps are
+never thinner than tile spacing.
+
+The last row is repaired, never stretched: it is merged into the row above when
+that costs less than the notch it would leave (the merged row then fills the
+width exactly), and otherwise it keeps the height the grid settled on and is
+centred in the leftover width. No tile row ever exceeds `thumbnailSize`.
 
 ## Configuration
 
@@ -68,9 +77,8 @@ A `config.json` is read from the current directory, then from
 
 | Key             | Default | Description                            |
 | --------------- | ------- | -------------------------------------- |
-| `theme`         | `dark`  | `dark` or `light`                      |
 | `thumbnailSize` | `240`   | Target tile height in px               |
-| `gap`           | `8`     | Reserved spacing                       |
+| `gap`           | `6`     | Tile spacing + window-edge margin (px) |
 | `windowWidth`   | `1440`  | Window width in px                     |
 | `windowHeight`  | `900`   | Window height in px                    |
 | `recursive`     | `true`  | Scan subdirectories                    |
@@ -91,15 +99,10 @@ unavailable. Each entry:
 | `args` | Arguments; `{path}` is substituted with the selected file path      |
 
 On success the file is re-probed for dimensions; if the file no longer
-exists (e.g. a `trash` delete) it is dropped from the grid. See
-[`examples/config.json`](examples/config.json):
-
-```json
-"commands": [
-  { "id": "rotate", "keys": ["r"], "cmd": "mogrify", "args": ["-rotate", "90", "{path}"] },
-  { "id": "delete", "keys": ["delete", "backspace"], "cmd": "trash", "args": ["{path}"] }
-]
-```
+exists (e.g. a `trash` delete) it is dropped from the grid. A worked
+`commands` list (rotate with `mogrify`, delete with `trash`) is in
+[`examples/config.json`](examples/config.json); that file is the single
+declaration of a full config, so it is not repeated here.
 
 ### Shortcut rebinds
 
